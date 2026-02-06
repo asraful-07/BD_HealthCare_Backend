@@ -1,0 +1,47 @@
+{
+  "name": "bd_healthcare_backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx watch --env-file=.env ./src/server.ts",
+    "build": "tsc",
+    "migrate": "prisma migrate dev",
+    "generate": "prisma generate",
+    "studio": "prisma studio",
+    "push": "prisma db push",
+    "pull": "prisma db pull"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asraful-07/BD_HealthCare_Backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/asraful-07/BD_HealthCare_Backend/issues"
+  },
+  "homepage": "https://github.com/asraful-07/BD_HealthCare_Backend#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.2.1",
+    "@types/pg": "^8.16.0",
+    "eslint": "^9.39.2",
+    "prisma": "^7.3.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "pg": "^8.18.0",
+    "tsx": "^4.21.0"
+  }
+}
