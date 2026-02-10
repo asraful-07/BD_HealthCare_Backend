@@ -19,23 +19,23 @@ export const getRefreshToken = (payload: JwtPayload) => {
   return refreshToken;
 };
 
-export const getAccessTokenCookie = (res: Response, token: string) => {
+export const setAccessTokenCookie = (res: Response, token: string) => {
   setCookie(res, "accessToken", token, {
     httpOnly: true,
     secure: true,
     sameSite: "none",
     path: "/",
-    maxAge: 60 * 60 * 60 * 24, //* 1 day
+    maxAge: 60 * 60 * 60 * 24 * 1000, //* 1 day
   });
 };
 
-export const refreshTokenCookie = (res: Response, token: string) => {
+export const setRefreshTokenCookie = (res: Response, token: string) => {
   setCookie(res, "refreshToken", token, {
     httpOnly: true,
     secure: true,
     sameSite: "none",
     path: "/",
-    maxAge: 60 * 60 * 60 * 24 * 7, //* 7 day
+    maxAge: 60 * 60 * 24 * 1000 * 7, //* 7 day
   });
 };
 
@@ -45,6 +45,6 @@ export const setBetterAuthSessionCookie = (res: Response, token: string) => {
     secure: true,
     sameSite: "none",
     path: "/",
-    maxAge: 60 * 60 * 60 * 24,
+    maxAge: 60 * 60 * 60 * 24 * 1000,
   });
 };
