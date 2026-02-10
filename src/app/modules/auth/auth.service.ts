@@ -4,12 +4,14 @@ import AppError from "../../errorHelper/AppError";
 import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import { getAccessToken, getRefreshToken } from "../../utils/token";
-
-interface IRegisterPatientPayload {
-  name: string;
-  email: string;
-  password: string;
-}
+import {
+  ILoginPatientPayload,
+  IRegisterPatientPayload,
+} from "./auth.interface";
+import { IRequestUser } from "../../interfaces/requestUser.interface";
+import { verifyToken } from "../../utils/jwt";
+import { envVars } from "../../config/env";
+import { JwtPayload } from "jsonwebtoken";
 
 export const PatientRegisterService = async (
   payload: IRegisterPatientPayload,
@@ -73,11 +75,6 @@ export const PatientRegisterService = async (
   }
 };
 
-interface ILoginPatientPayload {
-  email: string;
-  password: string;
-}
-
 export const PatientLoginService = async (payload: ILoginPatientPayload) => {
   const { email, password } = payload;
 
@@ -117,4 +114,104 @@ export const PatientLoginService = async (payload: ILoginPatientPayload) => {
   });
 
   return { ...data, accessToken, refreshToken };
+};
+
+export const GetMeService = async (user: IRequestUser) => {
+  const isUserExists = await prisma.user.findUnique({
+    where: {
+      id: user.userId,
+    },
+    include: {
+      patient: {
+        include: {
+          appointments: true,
+          medicalReports: true,
+          patientHealthData: true,
+          prescriptions: true,
+          reviews: true,
+        },
+      },
+      doctor: {
+        include: {
+          specialties: true,
+          appointments: true,
+          prescriptions: true,
+          reviews: true,
+        },
+      },
+      admin: true,
+    },
+  });
+
+  if (!isUserExists) {
+    throw new AppError(status.UNAUTHORIZED, "Unauthorized user");
+  }
+
+  return isUserExists;
+};
+
+export const GetNewTokenService = async (
+  refreshToken: string,
+  sessionToken: string,
+) => {
+  const isSessionTokenExists = prisma.session.findUnique({
+    where: {
+      id: sessionToken,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!isSessionTokenExists) {
+    throw new AppError(status.UNAUTHORIZED, "Invalid session token");
+  }
+
+  const verifiedRefreshToken = verifyToken(
+    refreshToken,
+    envVars.REFRESH_TOKEN_SECRET,
+  );
+
+  if (!verifiedRefreshToken.success) {
+    throw new AppError(status.UNAUTHORIZED, "Invalid refresh token");
+  }
+
+  const data = verifiedRefreshToken.data as JwtPayload;
+
+  const newAccessToken = getAccessToken({
+    userId: data.userId,
+    role: data.role,
+    name: data.name,
+    email: data.email,
+    status: data.status,
+    isDeleted: data.isDeleted,
+    emailVerified: data.emailVerified,
+  });
+
+  const newRefreshToken = getRefreshToken({
+    userId: data.userId,
+    role: data.role,
+    name: data.name,
+    email: data.email,
+    status: data.status,
+    isDeleted: data.isDeleted,
+    emailVerified: data.emailVerified,
+  });
+
+  const { token } = await prisma.session.update({
+    where: {
+      token: sessionToken,
+    },
+    data: {
+      token: sessionToken,
+      expiresAt: new Date(Date.now() + 60 * 60 * 60 * 24 * 1000),
+      updatedAt: new Date(),
+    },
+  });
+
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    sessionToken: token,
+  };
 };
