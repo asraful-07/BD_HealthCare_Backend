@@ -1,11 +1,16 @@
 import express from "express";
 import {
   ChangePasswordController,
+  forgetPasswordController,
   GetMeController,
   GetNewTokenController,
+  googleLoginController,
+  googleLoginSuccessController,
+  handleOAuthErrorController,
   logoutUserController,
   PatientLoginController,
   PatientRegisterController,
+  restPasswordController,
   verifyEmailController,
 } from "./auth.controller";
 import { checkAuth } from "../../middleware/checkAuth";
@@ -32,5 +37,11 @@ authRoutes.post(
   logoutUserController,
 );
 authRoutes.post("/verify-email", verifyEmailController);
+authRoutes.post("/forget-password", forgetPasswordController);
+authRoutes.post("/reset-password", restPasswordController);
+
+authRoutes.get("/login/google", googleLoginController);
+authRoutes.get("/google/success", googleLoginSuccessController);
+authRoutes.get("/oauth/error", handleOAuthErrorController);
 
 export default authRoutes;

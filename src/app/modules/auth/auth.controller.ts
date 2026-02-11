@@ -2,11 +2,14 @@ import { Request, Response } from "express";
 import { catchAsync } from "../../shared/catchAsync";
 import {
   ChangePasswordService,
+  forgetPasswordService,
   GetMeService,
   GetNewTokenService,
+  googleLoginSuccessService,
   logoutUserService,
   PatientLoginService,
   PatientRegisterService,
+  restPasswordService,
   verifyEmailService,
 } from "./auth.service";
 import { sendResponse } from "../../shared/sendResponse";
@@ -18,6 +21,8 @@ import {
 import status from "http-status";
 import AppError from "../../errorHelper/AppError";
 import { clearCookie } from "../../utils/cookie";
+import { envVars } from "../../config/env";
+import { auth } from "../../lib/auth";
 
 export const PatientRegisterController = catchAsync(
   async (req: Request, res: Response) => {
@@ -177,5 +182,93 @@ export const verifyEmailController = catchAsync(
       success: true,
       message: "Email verified successfully",
     });
+  },
+);
+
+export const forgetPasswordController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+    await forgetPasswordService(email);
+
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: "Password reset OTP sent to email successfully",
+    });
+  },
+);
+
+export const restPasswordController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { email, otp, newPassword } = req.body;
+    await restPasswordService(email, otp, newPassword);
+
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: "Password reset successfully",
+    });
+  },
+);
+
+// /api/v1/auth/login/google?redirect=/profile
+export const googleLoginController = catchAsync(
+  (req: Request, res: Response) => {
+    const redirectPath = req.query.redirect || "/dashboard";
+
+    const encodedRedirectPath = encodeURIComponent(redirectPath as string);
+
+    const callbackURL = `${envVars.BETTER_AUTH_URL}/api/v1/auth/google/success?redirect=${encodedRedirectPath}`;
+
+    res.render("googleRedirect", {
+      callbackURL: callbackURL,
+      betterAuthUrl: envVars.BETTER_AUTH_URL,
+    });
+  },
+);
+
+export const googleLoginSuccessController = catchAsync(
+  async (req: Request, res: Response) => {
+    const redirectPath = (req.query.redirect as string) || "/dashboard";
+
+    const sessionToken = req.cookies["better-auth.session_token"];
+
+    if (!sessionToken) {
+      return res.redirect(`${envVars.APP_URL}/login?error=oauth_failed`);
+    }
+
+    const session = await auth.api.getSession({
+      headers: {
+        Cookie: `better-auth.session_token=${sessionToken}`,
+      },
+    });
+
+    if (!session) {
+      return res.redirect(`${envVars.APP_URL}/login?error=no_session_found`);
+    }
+
+    if (session && !session.user) {
+      return res.redirect(`${envVars.APP_URL}/login?error=no_user_found`);
+    }
+
+    const result = await googleLoginSuccessService(session);
+
+    const { accessToken, refreshToken } = result;
+
+    setAccessTokenCookie(res, accessToken);
+    setRefreshTokenCookie(res, refreshToken);
+    // ?redirect=//profile -> /profile
+    const isValidRedirectPath =
+      redirectPath.startsWith("/") && !redirectPath.startsWith("//");
+    const finalRedirectPath = isValidRedirectPath ? redirectPath : "/dashboard";
+
+    res.redirect(`${envVars.APP_URL}${finalRedirectPath}`);
+  },
+);
+
+export const handleOAuthErrorController = catchAsync(
+  (req: Request, res: Response) => {
+    const error = (req.query.error as string) || "oauth_failed";
+    res.redirect(`${envVars.APP_URL}/login?error=${error}`);
   },
 );
