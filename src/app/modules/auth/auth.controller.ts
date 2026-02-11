@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
 import { catchAsync } from "../../shared/catchAsync";
 import {
+  ChangePasswordService,
   GetMeService,
   GetNewTokenService,
+  logoutUserService,
   PatientLoginService,
   PatientRegisterService,
+  verifyEmailService,
 } from "./auth.service";
 import { sendResponse } from "../../shared/sendResponse";
 import {
@@ -14,6 +17,7 @@ import {
 } from "../../utils/token";
 import status from "http-status";
 import AppError from "../../errorHelper/AppError";
+import { clearCookie } from "../../utils/cookie";
 
 export const PatientRegisterController = catchAsync(
   async (req: Request, res: Response) => {
@@ -108,6 +112,70 @@ export const GetNewTokenController = catchAsync(
         refreshToken: newRefreshToken,
         sessionToken,
       },
+    });
+  },
+);
+
+export const ChangePasswordController = catchAsync(
+  async (req: Request, res: Response) => {
+    const payload = req.body;
+    const betterAuthSessionToken = req.cookies["better-auth.session_token"];
+
+    const result = await ChangePasswordService(payload, betterAuthSessionToken);
+
+    const { accessToken, refreshToken, token } = result;
+
+    setAccessTokenCookie(res, accessToken);
+    setRefreshTokenCookie(res, refreshToken);
+    setBetterAuthSessionCookie(res, token as string);
+
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: "Password changed successfully",
+      data: result,
+    });
+  },
+);
+
+export const logoutUserController = catchAsync(
+  async (req: Request, res: Response) => {
+    const betterAuthSessionToken = req.cookies["better-auth.session_token"];
+    const result = await logoutUserService(betterAuthSessionToken);
+    clearCookie(res, "accessToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+    clearCookie(res, "refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+    clearCookie(res, "better-auth.session_token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: "User logged out successfully",
+      data: result,
+    });
+  },
+);
+
+export const verifyEmailController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { email, otp } = req.body;
+    await verifyEmailService(email, otp);
+
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: "Email verified successfully",
     });
   },
 );

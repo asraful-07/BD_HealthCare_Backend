@@ -1,9 +1,12 @@
 import express from "express";
 import {
+  ChangePasswordController,
   GetMeController,
   GetNewTokenController,
+  logoutUserController,
   PatientLoginController,
   PatientRegisterController,
+  verifyEmailController,
 } from "./auth.controller";
 import { checkAuth } from "../../middleware/checkAuth";
 import { Roles } from "../../../generated/prisma/enums";
@@ -18,5 +21,16 @@ authRoutes.get(
   GetMeController,
 );
 authRoutes.post("/refresh-token", GetNewTokenController);
+authRoutes.post(
+  "/change-password",
+  checkAuth(Roles.SUPER_ADMIN, Roles.ADMIN, Roles.DOCTOR, Roles.PATIENT),
+  ChangePasswordController,
+);
+authRoutes.post(
+  "/logout",
+  checkAuth(Roles.SUPER_ADMIN, Roles.ADMIN, Roles.DOCTOR, Roles.PATIENT),
+  logoutUserController,
+);
+authRoutes.post("/verify-email", verifyEmailController);
 
 export default authRoutes;
