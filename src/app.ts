@@ -35,6 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
 app.use(cookieParser());
+// multer and cloudinary middleware
+app.use(express.urlencoded({ extended: true }));
 
 //* Routes
 app.use("/api/v1", IndexRoutes);

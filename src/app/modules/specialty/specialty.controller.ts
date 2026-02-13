@@ -9,7 +9,12 @@ import { sendResponse } from "../../shared/sendResponse";
 
 export const CreateSpecialtyController = catchAsync(
   async (req: Request, res: Response) => {
-    const payload = req.body;
+    // console.log(req.body);
+    // console.log(req.file);
+    const payload = {
+      ...req.body,
+      icon: req.file?.path,
+    };
 
     const specialty = await CreateSpecialtyService(payload);
     sendResponse(res, {
