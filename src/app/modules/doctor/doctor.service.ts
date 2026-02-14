@@ -2,18 +2,59 @@ import status from "http-status";
 import AppError from "../../errorHelper/AppError";
 import { prisma } from "../../lib/prisma";
 import { IUpdateDoctorPayload } from "./doctor.interface";
+import { QueryBuilder } from "../../utils/QueryBuilder";
+import { Doctor, Prisma } from "../../../generated/prisma/client";
+import { IQueryParams } from "../../interfaces/query.interface";
+import {
+  doctorFilterableFields,
+  doctorIncludeConfig,
+  doctorSearchableFields,
+} from "./doctor.constant";
 
-export const GetsDoctorService = async () => {
-  const result = await prisma.doctor.findMany({
-    include: {
+export const GetsDoctorService = async (query: IQueryParams) => {
+  // const result = await prisma.doctor.findMany({
+  //   include: {
+  //     user: true,
+  //     specialties: {
+  //       select: {
+  //         specialty: true,
+  //       },
+  //     },
+  //   },
+  // });
+  // return result;
+
+  const queryBuilder = new QueryBuilder<
+    Doctor,
+    Prisma.DoctorWhereInput,
+    Prisma.DoctorInclude
+  >(prisma.doctor, query, {
+    searchableFields: doctorSearchableFields,
+    filterableFields: doctorFilterableFields,
+  });
+
+  const result = await queryBuilder
+    .search()
+    .filter()
+    .where({
+      isDeleted: false,
+    })
+    .include({
       user: true,
+      //? specialties: true,
       specialties: {
-        select: {
+        include: {
           specialty: true,
         },
       },
-    },
-  });
+    })
+    .dynamicInclude(doctorIncludeConfig)
+    .paginate()
+    .sort()
+    .fields()
+    .execute();
+
+  console.log(result);
   return result;
 };
 
