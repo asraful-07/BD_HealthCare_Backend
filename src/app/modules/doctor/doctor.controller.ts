@@ -13,13 +13,14 @@ import { IQueryParams } from "../../interfaces/query.interface";
 export const GetsDoctorController = catchAsync(
   async (req: Request, res: Response) => {
     const query = req.query;
-    const doctor = await GetsDoctorService(query as IQueryParams);
+    const result = await GetsDoctorService(query as IQueryParams);
 
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
       message: "Doctor fetch successfully",
-      data: doctor,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );

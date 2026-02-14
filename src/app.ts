@@ -8,8 +8,11 @@ import { auth } from "./app/lib/auth";
 import path from "path";
 import { envVars } from "./app/config/env";
 import cors from "cors";
-const app: Application = express();
+import qs from "qs";
 
+const app: Application = express();
+//* first query and filter
+app.set("query parser", (str: string) => qs.parse(str));
 //* ejs google login interface html code in backend
 app.set("view engine", "ejs");
 app.set("views", path.resolve(process.cwd(), `src/app/templates`));
