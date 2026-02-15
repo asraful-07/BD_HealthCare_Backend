@@ -46,7 +46,7 @@ export const UpdateDoctorController = catchAsync(
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
-      message: "Doctor fetch successfully",
+      message: "Doctor updated successfully",
       data: doctor,
     });
   },
@@ -59,7 +59,7 @@ export const SoftDeleteDoctorController = catchAsync(
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
-      message: "Doctor fetch successfully",
+      message: "Doctor deleted successfully",
       data: doctor,
     });
   },
