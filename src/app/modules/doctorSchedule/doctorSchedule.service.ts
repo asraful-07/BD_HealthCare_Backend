@@ -49,24 +49,26 @@ export const UpdateDoctorScheduleService = async (
     },
   });
 
-  const deleteScheduleIds = payload.scheduleIds
+  const deleteIds = payload.scheduleIds
     .filter((schedule) => schedule.shouldDelete)
     .map((schedule) => schedule.id);
 
-  const crateScheduleIds = payload.scheduleIds
+  const createIds = payload.scheduleIds
     .filter((schedule) => !schedule.shouldDelete)
     .map((schedule) => schedule.id);
 
   const result = await prisma.$transaction(async (tx) => {
     await tx.doctorSchedules.deleteMany({
       where: {
+        isBooked: false,
         doctorId: doctorData.id,
         scheduleId: {
-          in: deleteScheduleIds,
+          in: deleteIds,
         },
       },
     });
-    const doctorScheduleData = crateScheduleIds.map((scheduleId) => ({
+
+    const doctorScheduleData = createIds.map((scheduleId) => ({
       doctorId: doctorData.id,
       scheduleId,
     }));
