@@ -7,6 +7,7 @@ import status from "http-status";
 export const CreateScheduleController = catchAsync(
   async (req: Request, res: Response) => {
     const payload = req.body;
+
     const schedule = await CreateScheduleService(payload);
 
     sendResponse(res, {

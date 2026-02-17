@@ -1,5 +1,6 @@
 import { Specialty } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
+import { ICreateSpecialtyPayload } from "./specialty.interface";
 
 export const CreateSpecialtyService = async (
   payload: Specialty,
@@ -16,13 +17,42 @@ export const GetsSpecialtyService = async (): Promise<Specialty[]> => {
   return result;
 };
 
-export const DeleteSpecialtyService = async (
-  id: string,
-): Promise<Specialty> => {
-  const result = await prisma.specialty.delete({
+export const GetSpecialtyService = async (id: string) => {
+  const result = await prisma.specialty.findUnique({
     where: {
       id: id,
     },
   });
+  return result;
+};
+
+export const UpdateSpecialtyService = async (
+  id: string,
+  payload: Partial<ICreateSpecialtyPayload>,
+) => {
+  const result = await prisma.specialty.update({
+    where: {
+      id,
+    },
+    data: {
+      ...payload,
+      updatedAt: new Date(),
+    },
+  });
+
+  return result;
+};
+
+export const SoftDeleteSpecialtyService = async (id: string) => {
+  const result = await prisma.specialty.update({
+    where: {
+      id,
+    },
+    data: {
+      isDeleted: true,
+      deletedAt: new Date(),
+    },
+  });
+
   return result;
 };
