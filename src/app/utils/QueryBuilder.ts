@@ -252,7 +252,7 @@ export class QueryBuilder<
 
   paginate(): this {
     const page = Number(this.queryParams.page) || 1;
-    const limit = Number(this.queryParams.limit) || 10;
+    const limit = Number(this.queryParams.limit) || 12;
 
     this.page = page;
     this.limit = limit;
