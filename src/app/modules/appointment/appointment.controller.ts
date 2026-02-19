@@ -3,6 +3,10 @@ import { catchAsync } from "../../shared/catchAsync";
 import {
   BookAppointmentService,
   BookAppointmentWithPayLaterService,
+  ChangeAppointmentStatusService,
+  GetAllAppointmentsService,
+  GetMyAppointmentsService,
+  GetMySingleAppointmentService,
   InitiatePaymentService,
 } from "./appointment.service";
 import { sendResponse } from "../../shared/sendResponse";
@@ -50,6 +54,69 @@ export const InitiatePaymentController = catchAsync(
       httpStatusCode: status.OK,
       message: "Payment initiated successfully",
       data: paymentInfo,
+    });
+  },
+);
+
+export const GetMyAppointmentsController = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user;
+    const appointments = await GetMyAppointmentsService(user);
+    sendResponse(res, {
+      success: true,
+      httpStatusCode: status.OK,
+      message: "Appointments retrieved successfully",
+      data: appointments,
+    });
+  },
+);
+
+export const ChangeAppointmentStatusController = catchAsync(
+  async (req: Request, res: Response) => {
+    const appointmentId = req.params.id;
+    const payload = req.body;
+    const user = req.user;
+
+    const updatedAppointment = await ChangeAppointmentStatusService(
+      appointmentId as string,
+      payload,
+      user,
+    );
+    sendResponse(res, {
+      success: true,
+      httpStatusCode: status.OK,
+      message: "Appointment status updated successfully",
+      data: updatedAppointment,
+    });
+  },
+);
+
+export const GetAllAppointmentsController = catchAsync(
+  async (req: Request, res: Response) => {
+    const appointments = await GetAllAppointmentsService();
+    sendResponse(res, {
+      success: true,
+      httpStatusCode: status.OK,
+      message: "All appointments retrieved successfully",
+      data: appointments,
+    });
+  },
+);
+
+export const GetMySingleAppointmentController = catchAsync(
+  async (req: Request, res: Response) => {
+    const appointmentId = req.params.id;
+    const user = req.user;
+
+    const appointment = await GetMySingleAppointmentService(
+      appointmentId as string,
+      user,
+    );
+    sendResponse(res, {
+      success: true,
+      httpStatusCode: status.OK,
+      message: "Appointment retrieved successfully",
+      data: appointment,
     });
   },
 );

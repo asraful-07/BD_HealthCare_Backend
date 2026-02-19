@@ -9,6 +9,7 @@ import status from "http-status";
 import {
   AppointmentStatus,
   PaymentStatus,
+  Roles,
 } from "../../../generated/prisma/enums";
 
 export const BookAppointmentService = async (
@@ -268,6 +269,7 @@ export const InitiatePaymentService = async (
   };
 };
 
+//* auto updated unPayment patient
 export const CancelUnpaidAppointments = async () => {
   const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
@@ -319,4 +321,148 @@ export const CancelUnpaidAppointments = async () => {
       });
     }
   });
+};
+
+export const GetMyAppointmentsService = async (user: IRequestUser) => {
+  //user can be patient or doctor, so we need to check both
+  const patientData = await prisma.patient.findUnique({
+    where: {
+      email: user?.email,
+    },
+  });
+
+  const doctorData = await prisma.doctor.findUnique({
+    where: {
+      email: user?.email,
+    },
+  });
+
+  let appointments = [];
+
+  if (patientData) {
+    appointments = await prisma.appointment.findMany({
+      where: {
+        patientId: patientData.id,
+      },
+      include: {
+        doctor: true,
+        schedule: true,
+      },
+    });
+  } else if (doctorData) {
+    appointments = await prisma.appointment.findMany({
+      where: {
+        doctorId: doctorData.id,
+      },
+      include: {
+        patient: true,
+        schedule: true,
+      },
+    });
+  } else {
+    throw new Error("User not found");
+  }
+
+  return appointments;
+};
+
+// 1. Completed Or Cancelled Appointments should not be allowed to update status
+// 2. Doctors can only update Appointment status from schedule to inprogress or inprogress to complted or schedule to cancelled.
+// 3. Patients can only cancel the scheduled appointment if it scheduled not completed or cancelled or inprogress.
+// 4. Admin and Super admin can update to any status.
+
+export const ChangeAppointmentStatusService = async (
+  appointmentId: string,
+  appointmentStatus: AppointmentStatus,
+  user: IRequestUser,
+) => {
+  const appointmentData = await prisma.appointment.findUniqueOrThrow({
+    where: {
+      id: appointmentId,
+      // status: AppointmentStatus.SCHEDULED
+    },
+    include: {
+      doctor: true,
+    },
+  });
+
+  // if (!appointmentData) {
+  //     throw new AppError(status.NOT_FOUND, "Appointment not found or already completed/cancelled");
+  // }
+
+  if (user?.role === Roles.DOCTOR) {
+    if (!(user?.email === appointmentData.doctor.email))
+      throw new AppError(status.BAD_REQUEST, "This is not your appointment");
+  }
+
+  return await prisma.appointment.update({
+    where: {
+      id: appointmentId,
+    },
+    data: {
+      status: appointmentStatus,
+    },
+  });
+};
+
+// refactoring on include of doctor and patient data in appointment details, we can use query builder to get the data in single query instead of multiple queries in case of doctor and patient both
+export const GetMySingleAppointmentService = async (
+  appointmentId: string,
+  user: IRequestUser,
+) => {
+  const patientData = await prisma.patient.findUnique({
+    where: {
+      email: user?.email,
+    },
+  });
+
+  const doctorData = await prisma.doctor.findUnique({
+    where: {
+      email: user?.email,
+    },
+  });
+
+  let appointment;
+
+  if (patientData) {
+    appointment = await prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        patientId: patientData.id,
+      },
+      include: {
+        doctor: true,
+        schedule: true,
+      },
+    });
+  } else if (doctorData) {
+    appointment = await prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        doctorId: doctorData.id,
+      },
+      include: {
+        patient: true,
+        schedule: true,
+      },
+    });
+  }
+
+  if (!appointment) {
+    throw new AppError(status.NOT_FOUND, "Appointment not found");
+  }
+
+  return appointment;
+};
+
+// integrate query builder
+export const GetAllAppointmentsService = async () => {
+  const appointments = await prisma.appointment.findMany({
+    include: {
+      doctor: true,
+      patient: true,
+      schedule: true,
+    },
+  });
+  return appointments;
 };
