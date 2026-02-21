@@ -20,6 +20,7 @@ doctorScheduleRoutes.post(
 );
 doctorScheduleRoutes.get(
   "/my-doctor-schedules",
+  checkAuth(Roles.DOCTOR),
   GetMyDoctorSchedulesController,
 );
 doctorScheduleRoutes.get(

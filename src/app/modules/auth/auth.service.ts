@@ -33,7 +33,7 @@ export const PatientRegisterService = async (
   }
 
   try {
-    const patient = prisma.$transaction(async (tx) => {
+    const patient = await prisma.$transaction(async (tx) => {
       const patientTx = await tx.patient.create({
         data: {
           userId: data.user.id,
