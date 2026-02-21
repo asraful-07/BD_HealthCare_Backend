@@ -1,5 +1,7 @@
 import { Router } from "express";
 import {
+  ChangeUserRoleController,
+  ChangeUserStatusController,
   GetAdminController,
   GetsAdminController,
   SoftDeleteAdminController,
@@ -33,5 +35,12 @@ adminRoutes.delete(
   checkAuth(Roles.SUPER_ADMIN, Roles.ADMIN),
   SoftDeleteAdminController,
 );
+adminRoutes.patch(
+  "/",
+  checkAuth(Roles.SUPER_ADMIN, Roles.ADMIN),
+  ChangeUserStatusController,
+);
+
+adminRoutes.patch("/", checkAuth(Roles.SUPER_ADMIN), ChangeUserRoleController);
 
 export default adminRoutes;
